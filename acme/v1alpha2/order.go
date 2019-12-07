@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package acme
+package v1alpha2
 
 import (
 	"encoding/json"
@@ -32,13 +32,13 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchChallenge(c cs.AcmeV1alpha2Interface, meta metav1.ObjectMeta, transform func(alert *api.Challenge) *api.Challenge) (*api.Challenge, kutil.VerbType, error) {
-	cur, err := c.Challenges(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchOrder(c cs.AcmeV1alpha2Interface, meta metav1.ObjectMeta, transform func(alert *api.Order) *api.Order) (*api.Order, kutil.VerbType, error) {
+	cur, err := c.Orders(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		glog.V(3).Infof("Creating Challenge %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.Challenges(meta.Namespace).Create(transform(&api.Challenge{
+		glog.V(3).Infof("Creating Order %s/%s.", meta.Namespace, meta.Name)
+		out, err := c.Orders(meta.Namespace).Create(transform(&api.Order{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "Challenge",
+				Kind:       "Order",
 				APIVersion: api.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
@@ -47,14 +47,14 @@ func CreateOrPatchChallenge(c cs.AcmeV1alpha2Interface, meta metav1.ObjectMeta, 
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchChallenge(c, cur, transform)
+	return PatchOrder(c, cur, transform)
 }
 
-func PatchChallenge(c cs.AcmeV1alpha2Interface, cur *api.Challenge, transform func(*api.Challenge) *api.Challenge) (*api.Challenge, kutil.VerbType, error) {
-	return PatchChallengeObject(c, cur, transform(cur.DeepCopy()))
+func PatchOrder(c cs.AcmeV1alpha2Interface, cur *api.Order, transform func(*api.Order) *api.Order) (*api.Order, kutil.VerbType, error) {
+	return PatchOrderObject(c, cur, transform(cur.DeepCopy()))
 }
 
-func PatchChallengeObject(c cs.AcmeV1alpha2Interface, cur, mod *api.Challenge) (*api.Challenge, kutil.VerbType, error) {
+func PatchOrderObject(c cs.AcmeV1alpha2Interface, cur, mod *api.Order) (*api.Order, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -72,39 +72,39 @@ func PatchChallengeObject(c cs.AcmeV1alpha2Interface, cur, mod *api.Challenge) (
 	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, kutil.VerbUnchanged, nil
 	}
-	glog.V(3).Infof("Patching Challenge %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.Challenges(cur.Namespace).Patch(cur.Name, types.MergePatchType, patch)
+	glog.V(3).Infof("Patching Order %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
+	out, err := c.Orders(cur.Namespace).Patch(cur.Name, types.MergePatchType, patch)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateChallenge(c cs.AcmeV1alpha2Interface, meta metav1.ObjectMeta, transform func(*api.Challenge) *api.Challenge) (result *api.Challenge, err error) {
+func TryUpdateOrder(c cs.AcmeV1alpha2Interface, meta metav1.ObjectMeta, transform func(*api.Order) *api.Order) (result *api.Order, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.Challenges(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.Orders(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.Challenges(cur.Namespace).Update(transform(cur.DeepCopy()))
+			result, e2 = c.Orders(cur.Namespace).Update(transform(cur.DeepCopy()))
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to update Challenge %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
+		glog.Errorf("Attempt %d failed to update Order %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
 
 	if err != nil {
-		err = errors.Errorf("failed to update Challenge %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
+		err = errors.Errorf("failed to update Order %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
 }
 
-func UpdateChallengeStatus(
+func UpdateOrderStatus(
 	c cs.AcmeV1alpha2Interface,
-	in *api.Challenge,
-	transform func(*api.ChallengeStatus) *api.ChallengeStatus,
-) (result *api.Challenge, err error) {
-	apply := func(x *api.Challenge) *api.Challenge {
-		return &api.Challenge{
+	in *api.Order,
+	transform func(*api.OrderStatus) *api.OrderStatus,
+) (result *api.Order, err error) {
+	apply := func(x *api.Order) *api.Order {
+		return &api.Order{
 			TypeMeta:   x.TypeMeta,
 			ObjectMeta: x.ObjectMeta,
 			Spec:       x.Spec,
@@ -117,9 +117,9 @@ func UpdateChallengeStatus(
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
 		var e2 error
-		result, e2 = c.Challenges(in.Namespace).UpdateStatus(apply(cur))
+		result, e2 = c.Orders(in.Namespace).UpdateStatus(apply(cur))
 		if kerr.IsConflict(e2) {
-			latest, e3 := c.Challenges(in.Namespace).Get(in.Name, metav1.GetOptions{})
+			latest, e3 := c.Orders(in.Namespace).Get(in.Name, metav1.GetOptions{})
 			switch {
 			case e3 == nil:
 				cur = latest
@@ -136,7 +136,7 @@ func UpdateChallengeStatus(
 	})
 
 	if err != nil {
-		err = fmt.Errorf("failed to update status of Challenge %s/%s after %d attempts due to %v", in.Namespace, in.Name, attempt, err)
+		err = fmt.Errorf("failed to update status of Order %s/%s after %d attempts due to %v", in.Namespace, in.Name, attempt, err)
 	}
 	return
 }

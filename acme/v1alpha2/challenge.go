@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package certmanager
+package v1alpha2
 
 import (
 	"encoding/json"
@@ -22,8 +22,8 @@ import (
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/golang/glog"
-	api "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
-	cs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/typed/certmanager/v1alpha2"
+	api "github.com/jetstack/cert-manager/pkg/apis/acme/v1alpha2"
+	cs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/typed/acme/v1alpha2"
 	"github.com/pkg/errors"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,13 +32,13 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchIssuer(c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMeta, transform func(alert *api.Issuer) *api.Issuer) (*api.Issuer, kutil.VerbType, error) {
-	cur, err := c.Issuers(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchChallenge(c cs.AcmeV1alpha2Interface, meta metav1.ObjectMeta, transform func(alert *api.Challenge) *api.Challenge) (*api.Challenge, kutil.VerbType, error) {
+	cur, err := c.Challenges(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		glog.V(3).Infof("Creating Issuer %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.Issuers(meta.Namespace).Create(transform(&api.Issuer{
+		glog.V(3).Infof("Creating Challenge %s/%s.", meta.Namespace, meta.Name)
+		out, err := c.Challenges(meta.Namespace).Create(transform(&api.Challenge{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "Issuer",
+				Kind:       "Challenge",
 				APIVersion: api.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
@@ -47,14 +47,14 @@ func CreateOrPatchIssuer(c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMe
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchIssuer(c, cur, transform)
+	return PatchChallenge(c, cur, transform)
 }
 
-func PatchIssuer(c cs.CertmanagerV1alpha2Interface, cur *api.Issuer, transform func(*api.Issuer) *api.Issuer) (*api.Issuer, kutil.VerbType, error) {
-	return PatchIssuerObject(c, cur, transform(cur.DeepCopy()))
+func PatchChallenge(c cs.AcmeV1alpha2Interface, cur *api.Challenge, transform func(*api.Challenge) *api.Challenge) (*api.Challenge, kutil.VerbType, error) {
+	return PatchChallengeObject(c, cur, transform(cur.DeepCopy()))
 }
 
-func PatchIssuerObject(c cs.CertmanagerV1alpha2Interface, cur, mod *api.Issuer) (*api.Issuer, kutil.VerbType, error) {
+func PatchChallengeObject(c cs.AcmeV1alpha2Interface, cur, mod *api.Challenge) (*api.Challenge, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -72,39 +72,39 @@ func PatchIssuerObject(c cs.CertmanagerV1alpha2Interface, cur, mod *api.Issuer) 
 	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, kutil.VerbUnchanged, nil
 	}
-	glog.V(3).Infof("Patching Issuer %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.Issuers(cur.Namespace).Patch(cur.Name, types.MergePatchType, patch)
+	glog.V(3).Infof("Patching Challenge %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
+	out, err := c.Challenges(cur.Namespace).Patch(cur.Name, types.MergePatchType, patch)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateIssuer(c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMeta, transform func(*api.Issuer) *api.Issuer) (result *api.Issuer, err error) {
+func TryUpdateChallenge(c cs.AcmeV1alpha2Interface, meta metav1.ObjectMeta, transform func(*api.Challenge) *api.Challenge) (result *api.Challenge, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.Issuers(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.Challenges(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.Issuers(cur.Namespace).Update(transform(cur.DeepCopy()))
+			result, e2 = c.Challenges(cur.Namespace).Update(transform(cur.DeepCopy()))
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to update Issuer %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
+		glog.Errorf("Attempt %d failed to update Challenge %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
 
 	if err != nil {
-		err = errors.Errorf("failed to update Issuer %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
+		err = errors.Errorf("failed to update Challenge %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
 }
 
-func UpdateIssuerStatus(
-	c cs.CertmanagerV1alpha2Interface,
-	in *api.Issuer,
-	transform func(*api.IssuerStatus) *api.IssuerStatus,
-) (result *api.Issuer, err error) {
-	apply := func(x *api.Issuer) *api.Issuer {
-		return &api.Issuer{
+func UpdateChallengeStatus(
+	c cs.AcmeV1alpha2Interface,
+	in *api.Challenge,
+	transform func(*api.ChallengeStatus) *api.ChallengeStatus,
+) (result *api.Challenge, err error) {
+	apply := func(x *api.Challenge) *api.Challenge {
+		return &api.Challenge{
 			TypeMeta:   x.TypeMeta,
 			ObjectMeta: x.ObjectMeta,
 			Spec:       x.Spec,
@@ -117,9 +117,9 @@ func UpdateIssuerStatus(
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
 		var e2 error
-		result, e2 = c.Issuers(in.Namespace).UpdateStatus(apply(cur))
+		result, e2 = c.Challenges(in.Namespace).UpdateStatus(apply(cur))
 		if kerr.IsConflict(e2) {
-			latest, e3 := c.Issuers(in.Namespace).Get(in.Name, metav1.GetOptions{})
+			latest, e3 := c.Challenges(in.Namespace).Get(in.Name, metav1.GetOptions{})
 			switch {
 			case e3 == nil:
 				cur = latest
@@ -136,7 +136,7 @@ func UpdateIssuerStatus(
 	})
 
 	if err != nil {
-		err = fmt.Errorf("failed to update status of Issuer %s/%s after %d attempts due to %v", in.Namespace, in.Name, attempt, err)
+		err = fmt.Errorf("failed to update status of Challenge %s/%s after %d attempts due to %v", in.Namespace, in.Name, attempt, err)
 	}
 	return
 }
