@@ -100,7 +100,7 @@ func TryUpdateOrder(c cs.AcmeV1alpha2Interface, meta metav1.ObjectMeta, transfor
 
 func UpdateOrderStatus(
 	c cs.AcmeV1alpha2Interface,
-	in *api.Order,
+	meta metav1.ObjectMeta,
 	transform func(*api.OrderStatus) *api.OrderStatus,
 ) (result *api.Order, err error) {
 	apply := func(x *api.Order) *api.Order {
@@ -108,18 +108,21 @@ func UpdateOrderStatus(
 			TypeMeta:   x.TypeMeta,
 			ObjectMeta: x.ObjectMeta,
 			Spec:       x.Spec,
-			Status:     *transform(in.Status.DeepCopy()),
+			Status:     *transform(x.Status.DeepCopy()),
 		}
 	}
 
 	attempt := 0
-	cur := in.DeepCopy()
+	cur, err := c.Orders(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
 		var e2 error
-		result, e2 = c.Orders(in.Namespace).UpdateStatus(apply(cur))
+		result, e2 = c.Orders(meta.Namespace).UpdateStatus(apply(cur))
 		if kerr.IsConflict(e2) {
-			latest, e3 := c.Orders(in.Namespace).Get(in.Name, metav1.GetOptions{})
+			latest, e3 := c.Orders(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 			switch {
 			case e3 == nil:
 				cur = latest
@@ -136,7 +139,7 @@ func UpdateOrderStatus(
 	})
 
 	if err != nil {
-		err = fmt.Errorf("failed to update status of Order %s/%s after %d attempts due to %v", in.Namespace, in.Name, attempt, err)
+		err = fmt.Errorf("failed to update status of Order %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
 }
