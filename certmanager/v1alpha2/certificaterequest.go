@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -32,29 +33,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchCertificateRequest(c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMeta, transform func(alert *api.CertificateRequest) *api.CertificateRequest) (*api.CertificateRequest, kutil.VerbType, error) {
-	cur, err := c.CertificateRequests(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchCertificateRequest(ctx context.Context, c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMeta, transform func(alert *api.CertificateRequest) *api.CertificateRequest, opts metav1.PatchOptions) (*api.CertificateRequest, kutil.VerbType, error) {
+	cur, err := c.CertificateRequests(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating CertificateRequest %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.CertificateRequests(meta.Namespace).Create(transform(&api.CertificateRequest{
+		out, err := c.CertificateRequests(meta.Namespace).Create(ctx, transform(&api.CertificateRequest{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "CertificateRequest",
 				APIVersion: api.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchCertificateRequest(c, cur, transform)
+	return PatchCertificateRequest(ctx, c, cur, transform, opts)
 }
 
-func PatchCertificateRequest(c cs.CertmanagerV1alpha2Interface, cur *api.CertificateRequest, transform func(*api.CertificateRequest) *api.CertificateRequest) (*api.CertificateRequest, kutil.VerbType, error) {
-	return PatchCertificateRequestObject(c, cur, transform(cur.DeepCopy()))
+func PatchCertificateRequest(ctx context.Context, c cs.CertmanagerV1alpha2Interface, cur *api.CertificateRequest, transform func(*api.CertificateRequest) *api.CertificateRequest, opts metav1.PatchOptions) (*api.CertificateRequest, kutil.VerbType, error) {
+	return PatchCertificateRequestObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchCertificateRequestObject(c cs.CertmanagerV1alpha2Interface, cur, mod *api.CertificateRequest) (*api.CertificateRequest, kutil.VerbType, error) {
+func PatchCertificateRequestObject(ctx context.Context, c cs.CertmanagerV1alpha2Interface, cur, mod *api.CertificateRequest, opts metav1.PatchOptions) (*api.CertificateRequest, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -73,19 +77,19 @@ func PatchCertificateRequestObject(c cs.CertmanagerV1alpha2Interface, cur, mod *
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching CertificateRequest %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.CertificateRequests(cur.Namespace).Patch(cur.Name, types.MergePatchType, patch)
+	out, err := c.CertificateRequests(cur.Namespace).Patch(ctx, cur.Name, types.MergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateCertificateRequest(c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMeta, transform func(*api.CertificateRequest) *api.CertificateRequest) (result *api.CertificateRequest, err error) {
+func TryUpdateCertificateRequest(ctx context.Context, c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMeta, transform func(*api.CertificateRequest) *api.CertificateRequest, opts metav1.UpdateOptions) (result *api.CertificateRequest, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.CertificateRequests(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.CertificateRequests(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.CertificateRequests(cur.Namespace).Update(transform(cur.DeepCopy()))
+			result, e2 = c.CertificateRequests(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update CertificateRequest %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
@@ -99,9 +103,11 @@ func TryUpdateCertificateRequest(c cs.CertmanagerV1alpha2Interface, meta metav1.
 }
 
 func UpdateCertificateRequestStatus(
+	ctx context.Context,
 	c cs.CertmanagerV1alpha2Interface,
 	meta metav1.ObjectMeta,
 	transform func(*api.CertificateRequestStatus) *api.CertificateRequestStatus,
+	opts metav1.UpdateOptions,
 ) (result *api.CertificateRequest, err error) {
 	apply := func(x *api.CertificateRequest) *api.CertificateRequest {
 		return &api.CertificateRequest{
@@ -113,16 +119,16 @@ func UpdateCertificateRequestStatus(
 	}
 
 	attempt := 0
-	cur, err := c.CertificateRequests(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	cur, err := c.CertificateRequests(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
 		var e2 error
-		result, e2 = c.CertificateRequests(meta.Namespace).UpdateStatus(apply(cur))
+		result, e2 = c.CertificateRequests(meta.Namespace).UpdateStatus(ctx, apply(cur), opts)
 		if kerr.IsConflict(e2) {
-			latest, e3 := c.CertificateRequests(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			latest, e3 := c.CertificateRequests(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 			switch {
 			case e3 == nil:
 				cur = latest
