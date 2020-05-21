@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -32,29 +33,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchIssuer(c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMeta, transform func(alert *api.Issuer) *api.Issuer) (*api.Issuer, kutil.VerbType, error) {
-	cur, err := c.Issuers(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchIssuer(ctx context.Context, c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMeta, transform func(alert *api.Issuer) *api.Issuer, opts metav1.PatchOptions) (*api.Issuer, kutil.VerbType, error) {
+	cur, err := c.Issuers(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating Issuer %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.Issuers(meta.Namespace).Create(transform(&api.Issuer{
+		out, err := c.Issuers(meta.Namespace).Create(ctx, transform(&api.Issuer{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Issuer",
 				APIVersion: api.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchIssuer(c, cur, transform)
+	return PatchIssuer(ctx, c, cur, transform, opts)
 }
 
-func PatchIssuer(c cs.CertmanagerV1alpha2Interface, cur *api.Issuer, transform func(*api.Issuer) *api.Issuer) (*api.Issuer, kutil.VerbType, error) {
-	return PatchIssuerObject(c, cur, transform(cur.DeepCopy()))
+func PatchIssuer(ctx context.Context, c cs.CertmanagerV1alpha2Interface, cur *api.Issuer, transform func(*api.Issuer) *api.Issuer, opts metav1.PatchOptions) (*api.Issuer, kutil.VerbType, error) {
+	return PatchIssuerObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchIssuerObject(c cs.CertmanagerV1alpha2Interface, cur, mod *api.Issuer) (*api.Issuer, kutil.VerbType, error) {
+func PatchIssuerObject(ctx context.Context, c cs.CertmanagerV1alpha2Interface, cur, mod *api.Issuer, opts metav1.PatchOptions) (*api.Issuer, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -73,19 +77,19 @@ func PatchIssuerObject(c cs.CertmanagerV1alpha2Interface, cur, mod *api.Issuer) 
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching Issuer %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.Issuers(cur.Namespace).Patch(cur.Name, types.MergePatchType, patch)
+	out, err := c.Issuers(cur.Namespace).Patch(ctx, cur.Name, types.MergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateIssuer(c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMeta, transform func(*api.Issuer) *api.Issuer) (result *api.Issuer, err error) {
+func TryUpdateIssuer(ctx context.Context, c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMeta, transform func(*api.Issuer) *api.Issuer, opts metav1.UpdateOptions) (result *api.Issuer, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.Issuers(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.Issuers(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.Issuers(cur.Namespace).Update(transform(cur.DeepCopy()))
+			result, e2 = c.Issuers(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update Issuer %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
@@ -99,9 +103,11 @@ func TryUpdateIssuer(c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMeta, 
 }
 
 func UpdateIssuerStatus(
+	ctx context.Context,
 	c cs.CertmanagerV1alpha2Interface,
 	meta metav1.ObjectMeta,
 	transform func(*api.IssuerStatus) *api.IssuerStatus,
+	opts metav1.UpdateOptions,
 ) (result *api.Issuer, err error) {
 	apply := func(x *api.Issuer) *api.Issuer {
 		return &api.Issuer{
@@ -113,16 +119,16 @@ func UpdateIssuerStatus(
 	}
 
 	attempt := 0
-	cur, err := c.Issuers(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	cur, err := c.Issuers(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
 		var e2 error
-		result, e2 = c.Issuers(meta.Namespace).UpdateStatus(apply(cur))
+		result, e2 = c.Issuers(meta.Namespace).UpdateStatus(ctx, apply(cur), opts)
 		if kerr.IsConflict(e2) {
-			latest, e3 := c.Issuers(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			latest, e3 := c.Issuers(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 			switch {
 			case e3 == nil:
 				cur = latest

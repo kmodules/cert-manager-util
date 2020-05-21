@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"context"
 	"encoding/json"
 
 	jsonpatch "github.com/evanphx/json-patch"
@@ -31,29 +32,32 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchClusterIssuer(c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMeta, transform func(*api.ClusterIssuer) *api.ClusterIssuer) (*api.ClusterIssuer, kutil.VerbType, error) {
-	cur, err := c.ClusterIssuers().Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchClusterIssuer(ctx context.Context, c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMeta, transform func(*api.ClusterIssuer) *api.ClusterIssuer, opts metav1.PatchOptions) (*api.ClusterIssuer, kutil.VerbType, error) {
+	cur, err := c.ClusterIssuers().Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating ClusterIssuer %s", meta.Name)
-		out, err := c.ClusterIssuers().Create(transform(&api.ClusterIssuer{
+		out, err := c.ClusterIssuers().Create(ctx, transform(&api.ClusterIssuer{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ClusterIssuer",
 				APIVersion: api.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
-		}))
+		}), metav1.CreateOptions{
+			DryRun:       opts.DryRun,
+			FieldManager: opts.FieldManager,
+		})
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchClusterIssuer(c, cur, transform)
+	return PatchClusterIssuer(ctx, c, cur, transform, opts)
 }
 
-func PatchClusterIssuer(c cs.CertmanagerV1alpha2Interface, cur *api.ClusterIssuer, transform func(*api.ClusterIssuer) *api.ClusterIssuer) (*api.ClusterIssuer, kutil.VerbType, error) {
-	return PatchClusterIssuerObject(c, cur, transform(cur.DeepCopy()))
+func PatchClusterIssuer(ctx context.Context, c cs.CertmanagerV1alpha2Interface, cur *api.ClusterIssuer, transform func(*api.ClusterIssuer) *api.ClusterIssuer, opts metav1.PatchOptions) (*api.ClusterIssuer, kutil.VerbType, error) {
+	return PatchClusterIssuerObject(ctx, c, cur, transform(cur.DeepCopy()), opts)
 }
 
-func PatchClusterIssuerObject(c cs.CertmanagerV1alpha2Interface, cur, mod *api.ClusterIssuer) (*api.ClusterIssuer, kutil.VerbType, error) {
+func PatchClusterIssuerObject(ctx context.Context, c cs.CertmanagerV1alpha2Interface, cur, mod *api.ClusterIssuer, opts metav1.PatchOptions) (*api.ClusterIssuer, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -72,19 +76,19 @@ func PatchClusterIssuerObject(c cs.CertmanagerV1alpha2Interface, cur, mod *api.C
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching ClusterIssuer %s with %s.", cur.Name, string(patch))
-	out, err := c.ClusterIssuers().Patch(cur.Name, types.MergePatchType, patch)
+	out, err := c.ClusterIssuers().Patch(ctx, cur.Name, types.MergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateClusterIssuer(c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMeta, transform func(*api.ClusterIssuer) *api.ClusterIssuer) (result *api.ClusterIssuer, err error) {
+func TryUpdateClusterIssuer(ctx context.Context, c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMeta, transform func(*api.ClusterIssuer) *api.ClusterIssuer, opts metav1.UpdateOptions) (result *api.ClusterIssuer, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.ClusterIssuers().Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.ClusterIssuers().Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.ClusterIssuers().Update(transform(cur.DeepCopy()))
+			result, e2 = c.ClusterIssuers().Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update ClusterIssuer %s due to %v.", attempt, cur.Name, e2)
