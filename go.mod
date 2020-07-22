@@ -5,9 +5,9 @@ go 1.12
 require (
 	github.com/evanphx/json-patch v4.5.0+incompatible
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/jetstack/cert-manager v0.15.0
-	github.com/pkg/errors v0.8.1
-	k8s.io/apimachinery v0.18.3
+	github.com/jetstack/cert-manager v0.16.0-alpha.1
+	github.com/pkg/errors v0.9.1
+	k8s.io/apimachinery v0.18.5
 	kmodules.xyz/client-go v0.0.0-20200521065424-173e32c78a20
 )
 
