@@ -13,7 +13,7 @@ github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes/struct
 # github.com/google/gofuzz v1.1.0
 github.com/google/gofuzz
-# github.com/jetstack/cert-manager v1.0.0
+# github.com/jetstack/cert-manager v1.0.2
 github.com/jetstack/cert-manager/pkg/apis/acme
 github.com/jetstack/cert-manager/pkg/apis/acme/v1
 github.com/jetstack/cert-manager/pkg/apis/acme/v1alpha2
@@ -76,12 +76,12 @@ google.golang.org/appengine/urlfetch
 gopkg.in/inf.v0
 # gopkg.in/yaml.v2 v2.3.0
 gopkg.in/yaml.v2
-# k8s.io/api v0.19.0 => github.com/kmodules/api v0.18.4-0.20200524125823-c8bc107809b9
+# k8s.io/api v0.19.0 => github.com/kmodules/api v0.18.10-0.20200922195318-d60fe725dea0
 k8s.io/api/core/v1
 # k8s.io/apiextensions-apiserver v0.19.0
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1
-# k8s.io/apimachinery v0.19.0 => github.com/kmodules/apimachinery v0.19.0-alpha.0.0.20200520235721-10b58e57a423
+# k8s.io/apimachinery v0.19.0 => github.com/kmodules/apimachinery v0.19.0-alpha.0.0.20200922195535-0c9a1b86beec
 k8s.io/apimachinery/pkg/api/errors
 k8s.io/apimachinery/pkg/api/resource
 k8s.io/apimachinery/pkg/apis/meta/v1
@@ -116,7 +116,7 @@ k8s.io/apimachinery/pkg/util/yaml
 k8s.io/apimachinery/pkg/version
 k8s.io/apimachinery/pkg/watch
 k8s.io/apimachinery/third_party/forked/golang/reflect
-# k8s.io/client-go v0.19.0 => k8s.io/client-go v0.18.3
+# k8s.io/client-go v0.19.0 => github.com/kmodules/k8s-client-go v0.18.10-0.20200922201634-73fedf3d677e
 k8s.io/client-go/pkg/apis/clientauthentication
 k8s.io/client-go/pkg/apis/clientauthentication/v1alpha1
 k8s.io/client-go/pkg/apis/clientauthentication/v1beta1
@@ -134,10 +134,10 @@ k8s.io/client-go/util/keyutil
 k8s.io/client-go/util/workqueue
 # k8s.io/klog v1.0.0
 k8s.io/klog
-# k8s.io/utils v0.0.0-20200729134348-d5654de09c73
+# k8s.io/utils v0.0.0-20200729134348-d5654de09c73 => k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
 k8s.io/utils/integer
 k8s.io/utils/pointer
-# kmodules.xyz/client-go v0.0.0-20200521065424-173e32c78a20
+# kmodules.xyz/client-go v0.0.0-20200922200830-63d86b6e5b63
 kmodules.xyz/client-go
 # sigs.k8s.io/structured-merge-diff/v3 v3.0.0
 sigs.k8s.io/structured-merge-diff/v3/value
