@@ -8,7 +8,7 @@ require (
 	github.com/jetstack/cert-manager v1.0.2
 	github.com/pkg/errors v0.9.1
 	k8s.io/apimachinery v0.19.0
-	kmodules.xyz/client-go v0.0.0-20200922200830-63d86b6e5b63
+	kmodules.xyz/client-go v0.0.0-20201105071625-0b277310b9b8
 )
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d
