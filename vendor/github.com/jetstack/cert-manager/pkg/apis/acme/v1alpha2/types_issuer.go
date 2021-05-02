@@ -118,9 +118,11 @@ type ACMEExternalAccountBinding struct {
 	// encoded data.
 	Key cmmeta.SecretKeySelector `json:"keySecretRef"`
 
-	// keyAlgorithm is the MAC key algorithm that the key is used for.
-	// Valid values are "HS256", "HS384" and "HS512".
-	KeyAlgorithm HMACKeyAlgorithm `json:"keyAlgorithm"`
+	// Deprecated: keyAlgorithm field exists for historical compatibility
+	// reasons and should not be used. The algorithm is now hardcoded to HS256
+	// in golang/x/crypto/acme.
+	// +optional
+	KeyAlgorithm HMACKeyAlgorithm `json:"keyAlgorithm,omitempty"`
 }
 
 // HMACKeyAlgorithm is the name of a key algorithm used for HMAC encryption
@@ -202,6 +204,14 @@ type ACMEChallengeSolverHTTP01 struct {
 	// provisioned by cert-manager for each Challenge to be completed.
 	// +optional
 	Ingress *ACMEChallengeSolverHTTP01Ingress `json:"ingress,omitempty"`
+
+	// The Istio virtualservice based HTTP01 challenge solver will solve
+	// challenges by creating an Istio virtualservice resource that is connected
+	// to the specified Istio gateway in order to route requests for
+	// '/.well-known/acme-challenge/XYZ' to 'challenge solver' pods that are
+	// provisioned by cert-manager for each Challenge to be completed.
+	// +optional
+	Istio *ACMEChallengeSolverHTTP01Istio `json:"istio,omitempty"`
 }
 
 type ACMEChallengeSolverHTTP01Ingress struct {
@@ -301,6 +311,26 @@ type ACMEChallengeSolverHTTP01IngressObjectMeta struct {
 	// Labels that should be added to the created ACME HTTP01 solver ingress.
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+}
+
+type ACMEChallengeSolverHTTP01Istio struct {
+	// Optional service type for Kubernetes solver service
+	// +optional
+	ServiceType corev1.ServiceType `json:"serviceType,omitempty"`
+
+	// The names of the gateways that are used to generate the virtualservice
+	// that configures the HTTP01 challenge routes.
+	// `<gateway namespace>/<gateway name>`; specifying a gateway with no
+	// namespace qualifier is the same as specifying the VirtualService's
+	// namespace.
+	// ref: https://github.com/istio/api/blob/24c65c0415b63a6ebca18059c60fc8fccf041e9a/networking/v1beta1/virtual_service.pb.go#L233-L246
+	// +optional
+	Gateways []string `json:"gateways,omitempty"`
+
+	// Optional pod template used to configure the ACME challenge solver pods
+	// used for HTTP01 challenges
+	// +optional
+	PodTemplate *ACMEChallengeSolverHTTP01IngressPodTemplate `json:"podTemplate,omitempty"`
 }
 
 // Used to configure a DNS01 challenge provider to be used when solving DNS01
