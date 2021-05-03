@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	jsonpatch "github.com/evanphx/json-patch"
-	"k8s.io/klog/v2"
 	api "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1beta1"
 	cs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/typed/certmanager/v1beta1"
 	"github.com/pkg/errors"
@@ -30,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/klog/v2"
 	kutil "kmodules.xyz/client-go"
 )
 
