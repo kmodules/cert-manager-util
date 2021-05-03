@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 	jsonpatch "github.com/evanphx/json-patch"
-	"github.com/golang/glog"
+	"k8s.io/klog/v2"
 	api "github.com/jetstack/cert-manager/pkg/apis/acme/v1beta1"
 	cs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/typed/acme/v1beta1"
 	"github.com/pkg/errors"
@@ -36,7 +36,7 @@ import (
 func CreateOrPatchOrder(ctx context.Context, c cs.AcmeV1beta1Interface, meta metav1.ObjectMeta, transform func(alert *api.Order) *api.Order, opts metav1.PatchOptions) (*api.Order, kutil.VerbType, error) {
 	cur, err := c.Orders(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		glog.V(3).Infof("Creating Order %s/%s.", meta.Namespace, meta.Name)
+		klog.V(3).Infof("Creating Order %s/%s.", meta.Namespace, meta.Name)
 		out, err := c.Orders(meta.Namespace).Create(ctx, transform(&api.Order{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Order",
@@ -76,7 +76,7 @@ func PatchOrderObject(ctx context.Context, c cs.AcmeV1beta1Interface, cur, mod *
 	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, kutil.VerbUnchanged, nil
 	}
-	glog.V(3).Infof("Patching Order %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
+	klog.V(3).Infof("Patching Order %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
 	out, err := c.Orders(cur.Namespace).Patch(ctx, cur.Name, types.MergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
@@ -92,7 +92,7 @@ func TryUpdateOrder(ctx context.Context, c cs.AcmeV1beta1Interface, meta metav1.
 			result, e2 = c.Orders(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to update Order %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
+		klog.Errorf("Attempt %d failed to update Order %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
 

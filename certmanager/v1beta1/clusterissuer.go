@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 
 	jsonpatch "github.com/evanphx/json-patch"
-	"github.com/golang/glog"
+	"k8s.io/klog/v2"
 	api "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1beta1"
 	cs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/typed/certmanager/v1beta1"
 	"github.com/pkg/errors"
@@ -35,7 +35,7 @@ import (
 func CreateOrPatchClusterIssuer(ctx context.Context, c cs.CertmanagerV1beta1Interface, meta metav1.ObjectMeta, transform func(*api.ClusterIssuer) *api.ClusterIssuer, opts metav1.PatchOptions) (*api.ClusterIssuer, kutil.VerbType, error) {
 	cur, err := c.ClusterIssuers().Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		glog.V(3).Infof("Creating ClusterIssuer %s", meta.Name)
+		klog.V(3).Infof("Creating ClusterIssuer %s", meta.Name)
 		out, err := c.ClusterIssuers().Create(ctx, transform(&api.ClusterIssuer{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ClusterIssuer",
@@ -75,7 +75,7 @@ func PatchClusterIssuerObject(ctx context.Context, c cs.CertmanagerV1beta1Interf
 	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, kutil.VerbUnchanged, nil
 	}
-	glog.V(3).Infof("Patching ClusterIssuer %s with %s.", cur.Name, string(patch))
+	klog.V(3).Infof("Patching ClusterIssuer %s with %s.", cur.Name, string(patch))
 	out, err := c.ClusterIssuers().Patch(ctx, cur.Name, types.MergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
@@ -91,7 +91,7 @@ func TryUpdateClusterIssuer(ctx context.Context, c cs.CertmanagerV1beta1Interfac
 			result, e2 = c.ClusterIssuers().Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to update ClusterIssuer %s due to %v.", attempt, cur.Name, e2)
+		klog.Errorf("Attempt %d failed to update ClusterIssuer %s due to %v.", attempt, cur.Name, e2)
 		return false, nil
 	})
 

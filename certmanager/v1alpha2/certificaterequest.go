@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 	jsonpatch "github.com/evanphx/json-patch"
-	"github.com/golang/glog"
+	"k8s.io/klog/v2"
 	api "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	cs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/typed/certmanager/v1alpha2"
 	"github.com/pkg/errors"
@@ -36,7 +36,7 @@ import (
 func CreateOrPatchCertificateRequest(ctx context.Context, c cs.CertmanagerV1alpha2Interface, meta metav1.ObjectMeta, transform func(alert *api.CertificateRequest) *api.CertificateRequest, opts metav1.PatchOptions) (*api.CertificateRequest, kutil.VerbType, error) {
 	cur, err := c.CertificateRequests(meta.Namespace).Get(ctx, meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		glog.V(3).Infof("Creating CertificateRequest %s/%s.", meta.Namespace, meta.Name)
+		klog.V(3).Infof("Creating CertificateRequest %s/%s.", meta.Namespace, meta.Name)
 		out, err := c.CertificateRequests(meta.Namespace).Create(ctx, transform(&api.CertificateRequest{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "CertificateRequest",
@@ -76,7 +76,7 @@ func PatchCertificateRequestObject(ctx context.Context, c cs.CertmanagerV1alpha2
 	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, kutil.VerbUnchanged, nil
 	}
-	glog.V(3).Infof("Patching CertificateRequest %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
+	klog.V(3).Infof("Patching CertificateRequest %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
 	out, err := c.CertificateRequests(cur.Namespace).Patch(ctx, cur.Name, types.MergePatchType, patch, opts)
 	return out, kutil.VerbPatched, err
 }
@@ -92,7 +92,7 @@ func TryUpdateCertificateRequest(ctx context.Context, c cs.CertmanagerV1alpha2In
 			result, e2 = c.CertificateRequests(cur.Namespace).Update(ctx, transform(cur.DeepCopy()), opts)
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to update CertificateRequest %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
+		klog.Errorf("Attempt %d failed to update CertificateRequest %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
 
