@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/evanphx/json-patch v4.9.0+incompatible
-	github.com/jetstack/cert-manager v1.3.1
+	github.com/jetstack/cert-manager v1.4.0-beta.0
 	github.com/pkg/errors v0.9.1
 	k8s.io/apimachinery v0.21.0
 	k8s.io/klog/v2 v2.8.0
@@ -78,8 +78,6 @@ replace github.com/golang/protobuf => github.com/golang/protobuf v1.4.3
 replace github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
 
 replace github.com/imdario/mergo => github.com/imdario/mergo v0.3.5
-
-replace github.com/jetstack/cert-manager => github.com/kmodules/cert-manager v1.3.1-0.20210429172957-c5436c14ce0e
 
 replace github.com/prometheus-operator/prometheus-operator => github.com/prometheus-operator/prometheus-operator v0.47.0
 
