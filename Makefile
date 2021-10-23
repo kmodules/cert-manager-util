@@ -42,7 +42,7 @@ endif
 ### These variables should not need tweaking.
 ###
 
-SRC_DIRS := acme certmanager
+SRC_DIRS := acme certmanager reader
 
 DOCKER_PLATFORMS := linux/amd64 linux/arm linux/arm64
 BIN_PLATFORMS    := $(DOCKER_PLATFORMS)
