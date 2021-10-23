@@ -21,12 +21,12 @@ import (
 
 	cmcs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	informers "github.com/jetstack/cert-manager/pkg/client/informers/externalversions"
-	v1 "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
+	listers "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
 )
 
 type Reader interface {
-	ClusterIssuers() v1.ClusterIssuerLister
-	Issuers(namespace string) v1.IssuerNamespaceLister
+	ClusterIssuers() listers.ClusterIssuerLister
+	Issuers(namespace string) listers.IssuerNamespaceLister
 }
 
 func New(dc cmcs.Interface) Reader {

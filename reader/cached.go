@@ -21,9 +21,9 @@ import (
 	"reflect"
 	"sync"
 
-	core "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
+	cmapi "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	informers "github.com/jetstack/cert-manager/pkg/client/informers/externalversions"
-	v1 "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
+	listers "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
 )
 
 type cachedImpl struct {
@@ -31,47 +31,47 @@ type cachedImpl struct {
 	stopCh  <-chan struct{}
 
 	lock         sync.RWMutex
-	ciLister     v1.ClusterIssuerLister
-	issuerLister v1.IssuerLister
+	ciLister     listers.ClusterIssuerLister
+	issuerLister listers.IssuerLister
 }
 
 var _ Reader = &cachedImpl{}
 
-func (i *cachedImpl) ClusterIssuers() v1.ClusterIssuerLister {
-	getLister := func() v1.ClusterIssuerLister {
+func (i *cachedImpl) ClusterIssuers() listers.ClusterIssuerLister {
+	getLister := func() listers.ClusterIssuerLister {
 		i.lock.RLock()
 		defer i.lock.RUnlock()
 		if i.ciLister != nil {
 			return i.ciLister
 		}
 
-		informerType := reflect.TypeOf(&core.ClusterIssuer{})
-		informerDep, _ := i.factory.ForResource(core.SchemeGroupVersion.WithResource("clusterissuers"))
+		informerType := reflect.TypeOf(&cmapi.ClusterIssuer{})
+		informerDep, _ := i.factory.ForResource(cmapi.SchemeGroupVersion.WithResource("clusterissuers"))
 		i.factory.Start(i.stopCh)
 		if synced := i.factory.WaitForCacheSync(i.stopCh); !synced[informerType] {
 			panic(fmt.Sprintf("informer for %s hasn't synced", informerType))
 		}
-		i.ciLister = v1.NewClusterIssuerLister(informerDep.Informer().GetIndexer())
+		i.ciLister = listers.NewClusterIssuerLister(informerDep.Informer().GetIndexer())
 		return i.ciLister
 	}
 	return getLister()
 }
 
-func (i *cachedImpl) Issuers(namespace string) v1.IssuerNamespaceLister {
-	getLister := func() v1.IssuerLister {
+func (i *cachedImpl) Issuers(namespace string) listers.IssuerNamespaceLister {
+	getLister := func() listers.IssuerLister {
 		i.lock.RLock()
 		defer i.lock.RUnlock()
 		if i.issuerLister != nil {
 			return i.issuerLister
 		}
 
-		informerType := reflect.TypeOf(&core.Issuer{})
-		informerDep, _ := i.factory.ForResource(core.SchemeGroupVersion.WithResource("issuers"))
+		informerType := reflect.TypeOf(&cmapi.Issuer{})
+		informerDep, _ := i.factory.ForResource(cmapi.SchemeGroupVersion.WithResource("issuers"))
 		i.factory.Start(i.stopCh)
 		if synced := i.factory.WaitForCacheSync(i.stopCh); !synced[informerType] {
 			panic(fmt.Sprintf("informer for %s hasn't synced", informerType))
 		}
-		i.issuerLister = v1.NewIssuerLister(informerDep.Informer().GetIndexer())
+		i.issuerLister = listers.NewIssuerLister(informerDep.Informer().GetIndexer())
 		return i.issuerLister
 	}
 	return getLister().Issuers(namespace)

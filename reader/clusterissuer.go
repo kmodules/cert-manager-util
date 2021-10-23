@@ -21,16 +21,16 @@ import (
 	"fmt"
 	"reflect"
 
-	core "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
+	cmapi "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	cmcs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
-	v1 "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
+	listers "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/pager"
 )
 
-var _ v1.ClusterIssuerLister = &clusterissuerLister{}
+var _ listers.ClusterIssuerLister = &clusterissuerLister{}
 
 // clusterissuerLister implements the NamespaceLister interface.
 type clusterissuerLister struct {
@@ -38,7 +38,7 @@ type clusterissuerLister struct {
 }
 
 // List lists all resources in the indexer.
-func (l *clusterissuerLister) List(selector labels.Selector) (ret []*core.ClusterIssuer, err error) {
+func (l *clusterissuerLister) List(selector labels.Selector) (ret []*cmapi.ClusterIssuer, err error) {
 	fn := func(ctx context.Context, opts metav1.ListOptions) (runtime.Object, error) {
 		return l.dc.CertmanagerV1().ClusterIssuers().List(ctx, opts)
 	}
@@ -46,9 +46,9 @@ func (l *clusterissuerLister) List(selector labels.Selector) (ret []*core.Cluste
 		LabelSelector: selector.String(),
 	}
 	err = pager.New(fn).EachListItem(context.TODO(), opts, func(obj runtime.Object) error {
-		o, ok := obj.(*core.ClusterIssuer)
+		o, ok := obj.(*cmapi.ClusterIssuer)
 		if !ok {
-			return fmt.Errorf("expected *core.ClusterIssuer, found %s", reflect.TypeOf(obj))
+			return fmt.Errorf("expected *cmapi.ClusterIssuer, found %s", reflect.TypeOf(obj))
 		}
 		ret = append(ret, o)
 		return nil
@@ -57,7 +57,7 @@ func (l *clusterissuerLister) List(selector labels.Selector) (ret []*core.Cluste
 }
 
 // Get retrieves a resource from the indexer.
-func (l *clusterissuerLister) Get(name string) (*core.ClusterIssuer, error) {
+func (l *clusterissuerLister) Get(name string) (*cmapi.ClusterIssuer, error) {
 	obj, err := l.dc.CertmanagerV1().ClusterIssuers().Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err

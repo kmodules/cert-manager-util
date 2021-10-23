@@ -20,20 +20,20 @@ import (
 	"sync"
 
 	cmcs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
-	v1 "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
+	listers "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
 )
 
 type directImpl struct {
 	dc cmcs.Interface
 
 	lock         sync.RWMutex
-	ciLister     v1.ClusterIssuerLister
-	issuerLister v1.IssuerNamespaceLister
+	ciLister     listers.ClusterIssuerLister
+	issuerLister listers.IssuerNamespaceLister
 }
 
 var _ Reader = &directImpl{}
 
-func (i *directImpl) ClusterIssuers() v1.ClusterIssuerLister {
+func (i *directImpl) ClusterIssuers() listers.ClusterIssuerLister {
 	i.lock.RLock()
 	defer i.lock.RUnlock()
 	if i.ciLister != nil {
@@ -44,7 +44,7 @@ func (i *directImpl) ClusterIssuers() v1.ClusterIssuerLister {
 	return i.ciLister
 }
 
-func (i *directImpl) Issuers(namespace string) v1.IssuerNamespaceLister {
+func (i *directImpl) Issuers(namespace string) listers.IssuerNamespaceLister {
 	i.lock.RLock()
 	defer i.lock.RUnlock()
 	if i.issuerLister != nil {

@@ -21,16 +21,16 @@ import (
 	"fmt"
 	"reflect"
 
-	core "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
+	cmapi "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	cmcs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
-	v1 "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
+	listers "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/pager"
 )
 
-var _ v1.IssuerNamespaceLister = &issuerNamespaceLister{}
+var _ listers.IssuerNamespaceLister = &issuerNamespaceLister{}
 
 // issuerNamespaceLister implements the NamespaceLister interface.
 type issuerNamespaceLister struct {
@@ -39,7 +39,7 @@ type issuerNamespaceLister struct {
 }
 
 // List lists all resources in the indexer for a given namespace.
-func (l *issuerNamespaceLister) List(selector labels.Selector) (ret []*core.Issuer, err error) {
+func (l *issuerNamespaceLister) List(selector labels.Selector) (ret []*cmapi.Issuer, err error) {
 	fn := func(ctx context.Context, opts metav1.ListOptions) (runtime.Object, error) {
 		return l.dc.CertmanagerV1().Issuers(l.namespace).List(ctx, opts)
 	}
@@ -47,9 +47,9 @@ func (l *issuerNamespaceLister) List(selector labels.Selector) (ret []*core.Issu
 		LabelSelector: selector.String(),
 	}
 	err = pager.New(fn).EachListItem(context.TODO(), opts, func(obj runtime.Object) error {
-		o, ok := obj.(*core.Issuer)
+		o, ok := obj.(*cmapi.Issuer)
 		if !ok {
-			return fmt.Errorf("expected *core.Issuer, found %s", reflect.TypeOf(obj))
+			return fmt.Errorf("expected *cmapi.Issuer, found %s", reflect.TypeOf(obj))
 		}
 		ret = append(ret, o)
 		return nil
@@ -58,7 +58,7 @@ func (l *issuerNamespaceLister) List(selector labels.Selector) (ret []*core.Issu
 }
 
 // Get retrieves a resource from the indexer for a given namespace and name.
-func (l *issuerNamespaceLister) Get(name string) (*core.Issuer, error) {
+func (l *issuerNamespaceLister) Get(name string) (*cmapi.Issuer, error) {
 	obj, err := l.dc.CertmanagerV1().Issuers(l.namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
