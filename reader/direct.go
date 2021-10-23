@@ -31,7 +31,7 @@ type directImpl struct {
 	issuerLister v1.IssuerNamespaceLister
 }
 
-var _ ConfigReader = &directImpl{}
+var _ Reader = &directImpl{}
 
 func (i *directImpl) ClusterIssuers() v1.ClusterIssuerLister {
 	i.lock.RLock()

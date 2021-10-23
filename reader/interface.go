@@ -24,32 +24,32 @@ import (
 	v1 "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
 )
 
-type ConfigReader interface {
+type Reader interface {
 	ClusterIssuers() v1.ClusterIssuerLister
 	Issuers(namespace string) v1.IssuerNamespaceLister
 }
 
-func New(dc cmcs.Interface) ConfigReader {
+func New(dc cmcs.Interface) Reader {
 	return &directImpl{
 		dc: dc,
 	}
 }
 
-func NewCached(dc cmcs.Interface, defaultResync time.Duration, stopCh <-chan struct{}) ConfigReader {
+func NewCached(dc cmcs.Interface, defaultResync time.Duration, stopCh <-chan struct{}) Reader {
 	return &cachedImpl{
 		factory: informers.NewSharedInformerFactory(dc, defaultResync),
 		stopCh:  stopCh,
 	}
 }
 
-func NewCachedWithOptions(dc cmcs.Interface, defaultResync time.Duration, stopCh <-chan struct{}, options ...informers.SharedInformerOption) ConfigReader {
+func NewCachedWithOptions(dc cmcs.Interface, defaultResync time.Duration, stopCh <-chan struct{}, options ...informers.SharedInformerOption) Reader {
 	return &cachedImpl{
 		factory: informers.NewSharedInformerFactoryWithOptions(dc, defaultResync, options...),
 		stopCh:  stopCh,
 	}
 }
 
-func NewSharedCached(factory informers.SharedInformerFactory, stopCh <-chan struct{}) ConfigReader {
+func NewSharedCached(factory informers.SharedInformerFactory, stopCh <-chan struct{}) Reader {
 	return &cachedImpl{
 		factory: factory,
 		stopCh:  stopCh,

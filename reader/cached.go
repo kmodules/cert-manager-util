@@ -35,7 +35,7 @@ type cachedImpl struct {
 	issuerLister v1.IssuerLister
 }
 
-var _ ConfigReader = &cachedImpl{}
+var _ Reader = &cachedImpl{}
 
 func (i *cachedImpl) ClusterIssuers() v1.ClusterIssuerLister {
 	getLister := func() v1.ClusterIssuerLister {
