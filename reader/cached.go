@@ -38,9 +38,16 @@ type cachedImpl struct {
 var _ Reader = &cachedImpl{}
 
 func (i *cachedImpl) ClusterIssuers() listers.ClusterIssuerLister {
-	getLister := func() listers.ClusterIssuerLister {
-		i.lock.RLock()
-		defer i.lock.RUnlock()
+	i.lock.RLock()
+	if i.ciLister != nil {
+		i.lock.RUnlock()
+		return i.ciLister
+	}
+	i.lock.RUnlock()
+
+	createLister := func() listers.ClusterIssuerLister {
+		i.lock.Lock()
+		defer i.lock.Unlock()
 		if i.ciLister != nil {
 			return i.ciLister
 		}
@@ -54,13 +61,20 @@ func (i *cachedImpl) ClusterIssuers() listers.ClusterIssuerLister {
 		i.ciLister = listers.NewClusterIssuerLister(informerDep.Informer().GetIndexer())
 		return i.ciLister
 	}
-	return getLister()
+	return createLister()
 }
 
 func (i *cachedImpl) Issuers(namespace string) listers.IssuerNamespaceLister {
-	getLister := func() listers.IssuerLister {
-		i.lock.RLock()
-		defer i.lock.RUnlock()
+	i.lock.RLock()
+	if i.issuerLister != nil {
+		i.lock.RUnlock()
+		return i.issuerLister.Issuers(namespace)
+	}
+	i.lock.RUnlock()
+
+	createLister := func() listers.IssuerLister {
+		i.lock.Lock()
+		defer i.lock.Unlock()
 		if i.issuerLister != nil {
 			return i.issuerLister
 		}
@@ -74,5 +88,5 @@ func (i *cachedImpl) Issuers(namespace string) listers.IssuerNamespaceLister {
 		i.issuerLister = listers.NewIssuerLister(informerDep.Informer().GetIndexer())
 		return i.issuerLister
 	}
-	return getLister().Issuers(namespace)
+	return createLister().Issuers(namespace)
 }
