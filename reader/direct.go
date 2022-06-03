@@ -19,8 +19,8 @@ package reader
 import (
 	"sync"
 
-	cmcs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
-	listers "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
+	cmcs "github.com/cert-manager/cert-manager/pkg/client/clientset/versioned"
+	listers "github.com/cert-manager/cert-manager/pkg/client/listers/certmanager/v1"
 )
 
 type directImpl struct {

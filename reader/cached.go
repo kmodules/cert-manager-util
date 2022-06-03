@@ -21,9 +21,9 @@ import (
 	"reflect"
 	"sync"
 
-	cmapi "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
-	informers "github.com/jetstack/cert-manager/pkg/client/informers/externalversions"
-	listers "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
+	cmapi "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	informers "github.com/cert-manager/cert-manager/pkg/client/informers/externalversions"
+	listers "github.com/cert-manager/cert-manager/pkg/client/listers/certmanager/v1"
 )
 
 type cachedImpl struct {

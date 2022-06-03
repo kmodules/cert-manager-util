@@ -22,8 +22,8 @@ import (
 	"fmt"
 
 	jsonpatch "github.com/evanphx/json-patch"
-	api "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
-	cs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned/typed/certmanager/v1"
+	api "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	cs "github.com/cert-manager/cert-manager/pkg/client/clientset/versioned/typed/certmanager/v1"
 	"github.com/pkg/errors"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

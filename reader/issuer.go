@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"reflect"
 
-	cmapi "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
-	cmcs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
-	listers "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
+	cmapi "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	cmcs "github.com/cert-manager/cert-manager/pkg/client/clientset/versioned"
+	listers "github.com/cert-manager/cert-manager/pkg/client/listers/certmanager/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"

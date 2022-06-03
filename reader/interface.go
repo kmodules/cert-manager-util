@@ -19,9 +19,9 @@ package reader
 import (
 	"time"
 
-	cmcs "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
-	informers "github.com/jetstack/cert-manager/pkg/client/informers/externalversions"
-	listers "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1"
+	cmcs "github.com/cert-manager/cert-manager/pkg/client/clientset/versioned"
+	informers "github.com/cert-manager/cert-manager/pkg/client/informers/externalversions"
+	listers "github.com/cert-manager/cert-manager/pkg/client/listers/certmanager/v1"
 )
 
 type Reader interface {
