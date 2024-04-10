@@ -82,7 +82,7 @@ func PatchClusterIssuerObject(ctx context.Context, c cs.CertmanagerV1Interface, 
 
 func TryUpdateClusterIssuer(ctx context.Context, c cs.CertmanagerV1Interface, meta metav1.ObjectMeta, transform func(*api.ClusterIssuer) *api.ClusterIssuer, opts metav1.UpdateOptions) (result *api.ClusterIssuer, err error) {
 	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, kutil.RetryInterval, kutil.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		attempt++
 		cur, e2 := c.ClusterIssuers().Get(ctx, meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
