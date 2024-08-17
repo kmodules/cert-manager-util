@@ -123,7 +123,7 @@ func UpdateCertificateRequestStatus(
 	if err != nil {
 		return nil, err
 	}
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(context.TODO(), kutil.RetryInterval, kutil.RetryTimeout, true, func(ctx context.Context) (bool, error) {
 		attempt++
 		var e2 error
 		result, e2 = c.CertificateRequests(meta.Namespace).UpdateStatus(ctx, apply(cur), opts)
