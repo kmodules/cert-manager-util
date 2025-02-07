@@ -95,7 +95,6 @@ func TryUpdateCertificateRequest(ctx context.Context, c cs.CertmanagerV1Interfac
 		klog.Errorf("Attempt %d failed to update CertificateRequest %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
-
 	if err != nil {
 		err = errors.Errorf("failed to update CertificateRequest %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
@@ -143,7 +142,6 @@ func UpdateCertificateRequestStatus(
 		}
 		return e2 == nil, nil
 	})
-
 	if err != nil {
 		err = fmt.Errorf("failed to update status of CertificateRequest %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}

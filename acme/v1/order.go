@@ -95,7 +95,6 @@ func TryUpdateOrder(ctx context.Context, c cs.AcmeV1Interface, meta metav1.Objec
 		klog.Errorf("Attempt %d failed to update Order %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
-
 	if err != nil {
 		err = errors.Errorf("failed to update Order %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
@@ -143,7 +142,6 @@ func UpdateOrderStatus(
 		}
 		return e2 == nil, nil
 	})
-
 	if err != nil {
 		err = fmt.Errorf("failed to update status of Order %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}

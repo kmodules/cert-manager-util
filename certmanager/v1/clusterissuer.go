@@ -94,7 +94,6 @@ func TryUpdateClusterIssuer(ctx context.Context, c cs.CertmanagerV1Interface, me
 		klog.Errorf("Attempt %d failed to update ClusterIssuer %s due to %v.", attempt, cur.Name, e2)
 		return false, nil
 	})
-
 	if err != nil {
 		err = errors.Errorf("failed to update ClusterIssuer %s after %d attempts due to %v", meta.Name, attempt, err)
 	}
