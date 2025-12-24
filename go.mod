@@ -1,8 +1,6 @@
 module kmodules.xyz/cert-manager-util
 
-go 1.22.0
-
-toolchain go1.22.2
+go 1.23.0
 
 require (
 	github.com/cert-manager/cert-manager v1.15.2
@@ -34,7 +32,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	golang.org/x/net v0.26.0 // indirect
-	golang.org/x/oauth2 v0.20.0 // indirect
+	golang.org/x/oauth2 v0.27.0 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/term v0.21.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
