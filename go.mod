@@ -3,7 +3,7 @@ module kmodules.xyz/cert-manager-util
 go 1.25.0
 
 require (
-	github.com/cert-manager/cert-manager v1.19.2
+	github.com/cert-manager/cert-manager v1.19.3
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/pkg/errors v0.9.1
 	k8s.io/apimachinery v0.34.3
